@@ -83,17 +83,23 @@ body {
     color: #6c757d;
 }
 
-/* Responsive adjustments */
+/* Strength classification table */
+.strength-table th, .strength-table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .card-body {
         padding: 1.5rem;
     }
-    
+
     .btn {
         width: 100%;
         margin-bottom: 10px;
     }
-    
+
     .d-flex.justify-content-between {
         flex-direction: column;
     }
