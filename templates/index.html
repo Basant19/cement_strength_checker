@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cement Strength Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/css/style.css">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h3 mb-0">Concrete Compressive Strength Prediction</h1>
+                    </div>
+                    <div class="card-body">
+                        <form id="predictionForm" class="needs-validation" novalidate>
+                            <!-- Input Fields -->
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="cement" class="form-label">Cement (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="cement" required>
+                                    <div class="invalid-feedback">Please enter cement quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="slag" class="form-label">Blast Furnace Slag (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="slag" required>
+                                    <div class="invalid-feedback">Please enter slag quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="fly_ash" class="form-label">Fly Ash (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="fly_ash" required>
+                                    <div class="invalid-feedback">Please enter fly ash quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="water" class="form-label">Water (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="water" required>
+                                    <div class="invalid-feedback">Please enter water quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="superplasticizer" class="form-label">Superplasticizer (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="superplasticizer" required>
+                                    <div class="invalid-feedback">Please enter superplasticizer quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="coarse_agg" class="form-label">Coarse Aggregate (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="coarse_agg" required>
+                                    <div class="invalid-feedback">Please enter coarse aggregate quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="fine_agg" class="form-label">Fine Aggregate (kg/m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="fine_agg" required>
+                                    <div class="invalid-feedback">Please enter fine aggregate quantity</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="age" class="form-label">Age (days)</label>
+                                    <input type="number" class="form-control" id="age" required>
+                                    <div class="invalid-feedback">Please enter concrete age</div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-4 d-flex justify-content-between">
+                                <button type="button" id="clearBtn" class="btn btn-outline-danger">
+                                    <i class="bi bi-x-circle"></i> Clear Form
+                                </button>
+                                <button type="submit" id="predictBtn" class="btn btn-primary">
+                                    <i class="bi bi-lightning-charge"></i> Predict Strength
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Results Section -->
+                        <div id="resultsSection" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                            <h3 class="h5 mb-3">Prediction Results</h3>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="mb-1">Predicted Compressive Strength:</p>
+                                    <h2 id="predictionResult" class="mb-0 text-primary fw-bold">0.00 MPa</h2>
+                                </div>
+                                <div class="ms-3">
+                                    <div id="strengthMeter" class="strength-meter">
+                                        <div class="meter-bar"></div>
+                                        <div class="meter-labels">
+                                            <span>Low</span>
+                                            <span>Medium</span>
+                                            <span>High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Form validation and submission
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = this;
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            // Get form values
+            const inputs = {
+                cement: parseFloat(document.getElementById('cement').value),
+                blast_furnace_slag: parseFloat(document.getElementById('slag').value),
+                fly_ash: parseFloat(document.getElementById('fly_ash').value),
+                water: parseFloat(document.getElementById('water').value),
+                superplasticizer: parseFloat(document.getElementById('superplasticizer').value),
+                coarse_aggregate: parseFloat(document.getElementById('coarse_agg').value),
+                fine_aggregate: parseFloat(document.getElementById('fine_agg').value),
+                age: parseInt(document.getElementById('age').value)
+            };
+
+            // Disable button during request
+            const predictBtn = document.getElementById('predictBtn');
+            predictBtn.disabled = true;
+            predictBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Predicting...';
+
+            try {
+                // Simulate API call - replace with actual fetch to your endpoint
+                // const response = await fetch('/predict', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(inputs)
+                // });
+                // const result = await response.json();
+                
+                // For demo purposes - remove in production
+                const result = { prediction: (Math.random() * 50 + 10).toFixed(2) };
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Display results
+                document.getElementById('predictionResult').textContent = `${result.prediction} MPa`;
+                document.getElementById('resultsSection').style.display = 'block';
+                
+                // Update strength meter visualization
+                const strength = parseFloat(result.prediction);
+                const meterWidth = Math.min(100, (strength / 80) * 100);
+                document.querySelector('.meter-bar').style.width = `${meterWidth}%`;
+                
+            } catch (error) {
+                alert('Prediction failed: ' + error.message);
+            } finally {
+                predictBtn.disabled = false;
+                predictBtn.innerHTML = '<i class="bi bi-lightning-charge"></i> Predict Strength';
+            }
+        });
+
+        // Clear form functionality
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            const form = document.getElementById('predictionForm');
+            form.reset();
+            form.classList.remove('was-validated');
+            document.getElementById('resultsSection').style.display = 'none';
+            document.querySelector('.meter-bar').style.width = '0%';
+        });
+    </script>
+</body>
+</html>
