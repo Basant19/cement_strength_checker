@@ -27,8 +27,9 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
+          echo "✅ Dependencies installed"
           echo "🧪 Run unit tests (placeholder)"
-  
+
   build-and-push-ecr-image:
     name: Build & Push to ECR
     needs: integration
@@ -60,8 +61,20 @@ jobs:
   deploy-to-ec2:
     name: Deploy to EC2
     needs: build-and-push-ecr-image
-    runs-on: self-hosted  # or ubuntu-latest if SSH is used
+    runs-on: self-hosted
     steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_LOGIN_URI }}
+
       - name: Pull Docker image
         run: |
           docker pull ${{ secrets.AWS_ECR_LOGIN_URI }}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
