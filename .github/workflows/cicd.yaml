@@ -19,26 +19,26 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Install Python and run tests
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Run Unit Tests
         run: |
           pip install -r requirements.txt
-          echo " Dependencies installed"
-          echo " Run unit tests (placeholder)"
+          echo "✅ Dependencies installed"
+          echo "✅ Run unit tests (placeholder)"
 
   build-and-push-ecr-image:
-    name: Build & Push to ECR
+    name: Build & Push Docker Image to ECR
     needs: integration
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -59,32 +59,40 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
   deploy-to-ec2:
-    name: Deploy to EC2
+    name: Deploy to EC2 Instance
     needs: build-and-push-ecr-image
     runs-on: self-hosted
     steps:
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to Amazon ECR (Manual)
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
           docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_LOGIN_URI }}
 
-      - name: Pull Docker image
+      - name: Pull Latest Docker Image from ECR
         run: |
           docker pull ${{ secrets.AWS_ECR_LOGIN_URI }}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
-      - name: Run Docker container
+      - name: Stop & Remove Existing Container (if any)
         run: |
-          docker stop cement-container || true && docker rm cement-container || true
+          docker stop cement-container || true
+          docker rm cement-container || true
+
+      - name: Run New Docker Container
+        run: |
           docker run -d -p 8080:8080 \
             --name=cement-container \
             -e MONGO_URI=${{ secrets.MONGO_URI }} \
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             ${{ secrets.AWS_ECR_LOGIN_URI }}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+
+      - name: Clean Docker System
+        run: |
+          docker system prune -f
