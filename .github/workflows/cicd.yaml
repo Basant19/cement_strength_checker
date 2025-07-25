@@ -27,8 +27,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          echo "✅ Dependencies installed"
-          echo "🧪 Run unit tests (placeholder)"
+          echo " Dependencies installed"
+          echo " Run unit tests (placeholder)"
 
   build-and-push-ecr-image:
     name: Build & Push to ECR
